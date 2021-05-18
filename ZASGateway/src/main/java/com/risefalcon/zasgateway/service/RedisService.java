@@ -1,18 +1,11 @@
 package com.risefalcon.zasgateway.service;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.HashOperations;
-import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
-
 import javax.annotation.Resource;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +14,7 @@ import java.util.Set;
 @Slf4j
 @Service
 public class RedisService {
-    @Autowired // todo ?
+    @Resource // todo ?
     private StringRedisTemplate stringRedisTemplate;
 
     //string 类型
@@ -84,7 +77,7 @@ hash 类型其实原理和 string 一样的，但是有两个 key，使用 strin
 
 
 */
-    public void put(String h, Object hk, Object hv){
+    public void put(String h, String hk, String hv){
         stringRedisTemplate.opsForHash().put(h, hk, hv);
     }
 
@@ -106,12 +99,34 @@ hash 类型其实原理和 string 一样的，但是有两个 key，使用 strin
         List<Object> values = stringRedisTemplate.opsForHash().values(h);
         List<T> result = new ArrayList<>();
         for (Object o : values) {
-            log.info((String)o);
             result.add(JSON.parseObject((String)o, clazz)) ;
         }
-        log.info(result.toString());
         return result;
     }
 
+    public boolean exist(String h, String hk) {
+        return stringRedisTemplate.opsForHash().hasKey(h, hk);
+    }
 
+    public boolean update(String h, Object oldHk, Object newHk) {
+        Object obj = stringRedisTemplate.opsForHash().get(h, oldHk);
+        if (obj == null) return false;
+        stringRedisTemplate.opsForHash().delete(h, oldHk);
+        stringRedisTemplate.opsForHash().put(h, newHk, obj);
+        return true;
+    }
+
+
+    public void update(String h, Object oldHk, Object newHk, Object newObj) {
+        stringRedisTemplate.opsForHash().delete(h, oldHk);
+        stringRedisTemplate.opsForHash().put(h, newHk, newObj);
+    }
+
+
+    public void delete(String h, String hk) {
+        stringRedisTemplate.opsForHash().delete(h, hk);
+    }
+    public Set<Object> getKeys(String h) {
+        return stringRedisTemplate.opsForHash().keys(h);
+    }
 }

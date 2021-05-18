@@ -1,7 +1,7 @@
 package com.risefalcon.zasgateway.security;
 
 
-import com.risefalcon.zasgateway.model.Role;
+import com.risefalcon.zasgateway.model.UserRole;
 import com.risefalcon.zasgateway.model.User;
 import com.risefalcon.zasgateway.service.RedisService;
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +34,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             throw new RuntimeException("用户不存在");
         }
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        List<Role> roles = redisService.getValues("ROLE", Role.class);
-        for (Role role : roles) {
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
+        List<UserRole> roles = redisService.getValues("ROLE", UserRole.class);
+        for (UserRole role : roles) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getRoleId()));
         }
         return new org.springframework.security.core.userdetails.User
                 (user.getUsername(),"{noop}"+user.getPassword(),authorities);

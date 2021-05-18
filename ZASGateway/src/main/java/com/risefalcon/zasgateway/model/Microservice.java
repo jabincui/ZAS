@@ -7,20 +7,17 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 /**
- * 属于微服务的角色
- * microservice  1 : n role
+ * 下游微服务
  */
-@Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class Role {
+@AllArgsConstructor
+@Data
+public class Microservice {
     private String id;
-    private String msId;
     private String name;
 
-    public Role(String msId, String name) {
+    public Microservice(String name) {
         this.id = UUID.randomUUID().toString();
-        this.msId = msId;
         this.name = name;
     }
 }

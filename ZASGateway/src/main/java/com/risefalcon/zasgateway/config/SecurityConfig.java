@@ -1,5 +1,9 @@
 package com.risefalcon.zasgateway.config;
 
+import com.risefalcon.zasgateway.model.Authority;
+import com.risefalcon.zasgateway.model.Microservice;
+import com.risefalcon.zasgateway.model.Role;
+import com.risefalcon.zasgateway.model.URL;
 import com.risefalcon.zasgateway.security.JWTAuthenticationEntryPoint;
 import com.risefalcon.zasgateway.security.JWTAuthenticationFilter;
 import com.risefalcon.zasgateway.security.JWTTokenAuthorFilter;
@@ -27,8 +31,6 @@ import java.util.List;
 @Slf4j
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
-
-
 
     @Autowired
     @Qualifier("userDetailsServiceImpl")
@@ -80,6 +82,21 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .exceptionHandling()
                 // 匿名用户访问无权限资源时的异常
                 .authenticationEntryPoint(new JWTAuthenticationEntryPoint());
+
+
+        for (Authority authority: redisService.getValues(Constant.AUTHORITY, Authority.class)) {
+            String msName = redisService.get(Constant.MICROSERVICE, authority.getMsId(), Microservice.class).getName();
+            String path = redisService.get(Constant.URL, authority.getUrlId(), URL.class).getPath();
+            String role = redisService.get(Constant.ROLE, authority.getRoleId(), Role.class).getName();
+            String antPattern = "/" + msName + (path.startsWith("/") ? "" : "/") + path;
+            if (authority.getId().startsWith("pa")) {
+                http.authorizeRequests().antMatchers(antPattern).permitAll();
+            } else {
+                http.authorizeRequests().antMatchers(antPattern).hasRole(role);
+            }
+        }
+
+
     }
 
     /**
