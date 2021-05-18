@@ -49,7 +49,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        List<String> antPatterns = redisService.getValues("antPatterns", String.class);
 
         // 跨域共享
         http.cors()
@@ -67,22 +66,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/**/*.css",
                         "/**/*.js",
                         "/webSocket/**"
-                ).permitAll()
-                .anyRequest().permitAll()
-                .and()
-                // 添加JWT登录拦截器
-                .addFilter(new JWTAuthenticationFilter(authenticationManager()))
-                // 添加JWT鉴权拦截器
-                .addFilter(new JWTTokenAuthorFilter(authenticationManager()))
-                .sessionManagement()
-                // 设置Session的创建策略为：Spring Security永不创建HttpSession 不使用HttpSession来获取SecurityContext
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                // 异常处理
-                .exceptionHandling()
-                // 匿名用户访问无权限资源时的异常
-                .authenticationEntryPoint(new JWTAuthenticationEntryPoint());
-
+                ).permitAll();
 
         for (Authority authority: redisService.getValues(Constant.AUTHORITY, Authority.class)) {
             String msName = redisService.get(Constant.MICROSERVICE, authority.getMsId(), Microservice.class).getName();
@@ -96,6 +80,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             }
         }
 
+        http
+                // 添加JWT登录拦截器
+                .addFilter(new JWTAuthenticationFilter(authenticationManager()))
+                // 添加JWT鉴权拦截器
+                .addFilter(new JWTTokenAuthorFilter(authenticationManager()))
+                .sessionManagement()
+                // 设置Session的创建策略为：Spring Security永不创建HttpSession 不使用HttpSession来获取SecurityContext
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                // 异常处理
+                .exceptionHandling()
+                // 匿名用户访问无权限资源时的异常
+                .authenticationEntryPoint(new JWTAuthenticationEntryPoint());
 
     }
 

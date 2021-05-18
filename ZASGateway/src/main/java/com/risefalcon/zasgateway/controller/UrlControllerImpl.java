@@ -2,6 +2,8 @@ package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.risefalcon.zasgateway.config.Constant;
+import com.risefalcon.zasgateway.model.Authority;
 import com.risefalcon.zasgateway.model.URL;
 import com.risefalcon.zasgateway.service.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,19 +24,60 @@ public class UrlControllerImpl implements UrlController {
         JSONObject jsonObject = new JSONObject();
         if (url.getMsId() == null || url.getMsId().equals("")
                 || url.getPath() == null || url.getPath().equals("")) {
-
+            jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
+            return jsonObject;
         }
-        return null;
+        for (URL u: redisService.getValues(Constant.URL, URL.class)) {
+            if (u.getMsId().equals(url.getMsId())
+                    && u.getPath().equals(url.getPath())) {
+                jsonObject.put(Constant.RESULT_KEY, Constant.EXIST);
+            }
+            return jsonObject;
+        }
+        URL u = new URL(url.getMsId(), url.getPath());
+        redisService.put(Constant.URL, u.getId(), JSON.toJSONString(u));
+        jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
+        jsonObject.put(Constant.OBJ, u);
+        return jsonObject;
     }
 
     @Override
     public String upd(URL url) {
-        return null;
+        if (url.getId() == null || url.getId().equals("")) {
+            return Constant.INVALID;
+        }
+        if (!redisService.exist(Constant.URL, url.getId())) {
+            return Constant.NOT_EXIST;
+        }
+        for (URL u: redisService.getValues(Constant.URL, URL.class)) {
+            if (u.getMsId().equals(url.getMsId())
+                    && u.getPath().equals(url.getPath())) {
+                return Constant.EXIST;
+            }
+        }
+        url.setMsId(redisService.get(Constant.URL, url.getId(), URL.class).getMsId());
+        redisService.put(Constant.URL, url.getId(), JSON.toJSONString(url));
+        return Constant.PASS;
     }
 
     @Override
     public String del(String id) {
-        return null;
+        if (id == null || id.equals("")) {
+            return Constant.INVALID;
+        }
+        if (!redisService.exist(Constant.URL, id)) {
+            return Constant.NOT_EXIST;
+        }
+
+        // 删除有关权限项
+        for (Authority authority: redisService.getValues(Constant.AUTHORITY, Authority.class)) {
+            if (authority.getUrlId().equals(id)) {
+                redisService.delete(Constant.AUTHORITY, authority.getId());
+            }
+        }
+
+        redisService.delete(Constant.URL, id);
+        return Constant.PASS;
     }
 
     @Override

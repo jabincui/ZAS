@@ -3,6 +3,7 @@ package com.risefalcon.zasgateway.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.risefalcon.zasgateway.config.Constant;
+import com.risefalcon.zasgateway.model.Authority;
 import com.risefalcon.zasgateway.model.Role;
 import com.risefalcon.zasgateway.service.RedisService;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +46,8 @@ public class RoleControllerImpl implements  RoleController{
             return jsonObject;
         }
         for (Role r: redisService.getValues(Constant.ROLE, Role.class)) {
-            if (r.getName().equals(role.getName())) {
+            if (r.getMsId().equals(role.getMsId())
+                    && r.getName().equals(role.getName())) {
                 jsonObject.put(Constant.RESULT_KEY, Constant.EXIST);
                 return jsonObject;
             }
@@ -80,7 +82,8 @@ public class RoleControllerImpl implements  RoleController{
             return Constant.NOT_EXIST;
         }
         for (Role r: redisService.getValues(Constant.ROLE, Role.class)) {
-            if (r.getName().equals(role.getName())) {
+            if (r.getMsId().equals(role.getMsId())
+                    && r.getName().equals(role.getName())) {
                 return Constant.EXIST;
             }
         }
@@ -105,6 +108,13 @@ public class RoleControllerImpl implements  RoleController{
         }
         if (!redisService.exist(Constant.ROLE, id)) {
             return Constant.NOT_EXIST;
+        }
+
+        // 删除有关权限项
+        for (Authority authority: redisService.getValues(Constant.AUTHORITY, Authority.class)) {
+            if (authority.getRoleId().equals(id)) {
+                redisService.delete(Constant.AUTHORITY, authority.getId());
+            }
         }
 
         redisService.delete(Constant.ROLE, id);

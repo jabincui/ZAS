@@ -11,4 +11,9 @@ public class URL {
     private String id;
     private String msId;
     private String path;
+
+    public URL(String msId, String path) {
+        this.msId = msId;
+        this.path = path;
+    }
 }

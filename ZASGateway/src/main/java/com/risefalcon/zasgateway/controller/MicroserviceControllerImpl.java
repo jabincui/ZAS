@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @RestController
@@ -86,21 +87,22 @@ public class MicroserviceControllerImpl implements MicroserviceController{
 
     /**
      * 删除微服务
-     * @param name 要删除的微服务的名称
+     * @param id 要删除的微服务的id
      * @return
-     *      INVALID：找不到name或name是空串
+     *      INVALID：找不到id或id是空串
      *      NOT_EXIST：id不存在
      *      PASS：正常通过
      */
     @Override
-    public String del(@RequestBody String name) {
-        if (name == null || name.equals("")) {
+    public String del(String id) {
+        log.info(id);
+        if (id == null || id.equals("")) {
             return Constant.INVALID;
         }
-        if (!redisService.exist(Constant.MICROSERVICE, name)) {
+        if (!redisService.exist(Constant.MICROSERVICE, id)) {
             return Constant.NOT_EXIST;
         }
-        redisService.delete(Constant.MICROSERVICE, name);
+        redisService.delete(Constant.MICROSERVICE, id);
         return Constant.PASS;
     }
 
@@ -113,4 +115,8 @@ public class MicroserviceControllerImpl implements MicroserviceController{
         return redisService.getValues(Constant.MICROSERVICE, Microservice.class);
     }
 
+    @GetMapping("/keys")
+    public Set<Object> getKeys() {
+        return redisService.getKeys(Constant.MICROSERVICE);
+    }
 }
