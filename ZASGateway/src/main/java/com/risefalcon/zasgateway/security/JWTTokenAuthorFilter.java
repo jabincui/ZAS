@@ -62,16 +62,16 @@ public class JWTTokenAuthorFilter extends BasicAuthenticationFilter {
         String username = JwtTokenUtil.getUsername(token);
         // 从Token中解密获取用户角色
         String role = JwtTokenUtil.getUserRole(token);
+        log.info("role:" + role);
         // 将[ROLE_XXX,ROLE_YYY]格式的角色字符串转换为数组
         String[] roles = StringUtils.strip(role, "[]").split(", ");
-        Collection<SimpleGrantedAuthority> authorities=new ArrayList<>();
-        for (String s:roles)
-        {
+        Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        for (String s: roles) {
+            log.info("s: " + s);
             authorities.add(new SimpleGrantedAuthority(s));
         }
-        if (username != null)
-        {
-            return new UsernamePasswordAuthenticationToken(username, null,authorities);
+        if (username != null) {
+            return new UsernamePasswordAuthenticationToken(username, null, authorities);
         }
         return null;
     }

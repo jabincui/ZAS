@@ -33,7 +33,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     public JWTAuthenticationFilter(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
         // TODO: 自定义登录认证入口
-        super.setFilterProcessesUrl("/signin/auth");
+        super.setFilterProcessesUrl("/auth/signin");
     }
 
     /**

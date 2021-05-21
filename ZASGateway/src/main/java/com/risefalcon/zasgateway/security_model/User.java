@@ -1,4 +1,4 @@
-package com.risefalcon.zasgateway.model;
+package com.risefalcon.zasgateway.security_model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,13 +13,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class User {
-    private String id;
     private String username;
     private String password;
-
-    public User(String username, String password) {
-        this.id = UUID.randomUUID().toString();
-        this.username = username;
-        this.password = password;
-    }
 }

@@ -1,5 +1,6 @@
 package com.risefalcon.zasgateway.model;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,13 +8,9 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class URL {
+public class Flow {
     private String id;
-    private String msId;
-    private String path;
-
-    public URL(String msId, String path) {
-        this.msId = msId;
-        this.path = path;
-    }
+    private String userId;
+    private String url;
+    private String date;
 }

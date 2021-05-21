@@ -2,9 +2,9 @@ package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.risefalcon.zasgateway.config.Constant;
-import com.risefalcon.zasgateway.model.Authority;
-import com.risefalcon.zasgateway.model.Role;
+import com.risefalcon.zasgateway.util.Constant;
+import com.risefalcon.zasgateway.security_model.Authority;
+import com.risefalcon.zasgateway.security_model.Role;
 import com.risefalcon.zasgateway.service.RedisService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -146,4 +146,21 @@ public class RoleControllerImpl implements  RoleController{
         return redisService.getKeys(Constant.ROLE);
     }
 
+
+    @Override
+    public JSONObject getByMsId(String msId) {
+        JSONObject jsonObject = new JSONObject();
+        if (msId == null || msId.equals("")) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
+        }
+        if (!redisService.exist(Constant.MICROSERVICE, msId)) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.NOT_EXIST);
+            return jsonObject;
+        }
+        List<Role> roles = redisService.getValues(Constant.ROLE, Role.class);
+        roles.removeIf(role -> !role.getMsId().equals(msId));
+        jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
+        jsonObject.put(Constant.OBJ, roles);
+        return jsonObject;
+    }
 }

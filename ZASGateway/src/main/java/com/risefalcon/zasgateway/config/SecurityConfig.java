@@ -1,19 +1,17 @@
 package com.risefalcon.zasgateway.config;
 
-import com.risefalcon.zasgateway.model.Authority;
-import com.risefalcon.zasgateway.model.Microservice;
-import com.risefalcon.zasgateway.model.Role;
-import com.risefalcon.zasgateway.model.URL;
+import com.risefalcon.zasgateway.security_model.Authority;
+import com.risefalcon.zasgateway.security_model.Microservice;
+import com.risefalcon.zasgateway.security_model.URL;
 import com.risefalcon.zasgateway.security.JWTAuthenticationEntryPoint;
 import com.risefalcon.zasgateway.security.JWTAuthenticationFilter;
 import com.risefalcon.zasgateway.security.JWTTokenAuthorFilter;
 import com.risefalcon.zasgateway.service.RedisService;
+import com.risefalcon.zasgateway.util.Constant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -26,7 +24,6 @@ import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import java.util.List;
 
 @Slf4j
 @EnableWebSecurity
@@ -58,7 +55,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 // 访问/test/**需要USER角色
                 // TODO: 自定义拦截和权限规则
-                .antMatchers("/test/**").hasRole("USER")
                 // 放行GET和静态资源
                 .antMatchers(
                         "/*.html",
@@ -71,9 +67,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         for (Authority authority: redisService.getValues(Constant.AUTHORITY, Authority.class)) {
             String msName = redisService.get(Constant.MICROSERVICE, authority.getMsId(), Microservice.class).getName();
             String path = redisService.get(Constant.URL, authority.getUrlId(), URL.class).getPath();
-            String role = redisService.get(Constant.ROLE, authority.getRoleId(), Role.class).getName();
+            String role = authority.getRoleId();
+            // 自动补全路径前缀
             String antPattern = "/" + msName + (path.startsWith("/") ? "" : "/") + path;
-            if (authority.getId().startsWith("pa")) {
+            if (authority.getId().startsWith(Constant.PA)) {
                 http.authorizeRequests().antMatchers(antPattern).permitAll();
             } else {
                 http.authorizeRequests().antMatchers(antPattern).hasRole(role);
@@ -93,6 +90,41 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .exceptionHandling()
                 // 匿名用户访问无权限资源时的异常
                 .authenticationEntryPoint(new JWTAuthenticationEntryPoint());
+
+        //---------------------------------------------------------------------
+
+
+//        // 跨域共享
+//        http.cors()
+//                .and()
+//                // 跨域伪造请求限制无效
+//                .csrf().disable()
+//                .authorizeRequests()
+//                // 访问/test/**需要USER角色
+//                // TODO: 自定义拦截和权限规则
+//                .antMatchers("/EurekaClient/hello").hasRole("USER")
+//                // 放行GET和静态资源
+//                .antMatchers(
+//                        "/*.html",
+//                        "/**/*.html",
+//                        "/**/*.css",
+//                        "/**/*.js",
+//                        "/webSocket/**"
+//                ).permitAll()
+//                .anyRequest().permitAll()
+//                .and()
+//                // 添加JWT登录拦截器
+//                .addFilter(new JWTAuthenticationFilter(authenticationManager()))
+//                // 添加JWT鉴权拦截器
+//                .addFilter(new JWTTokenAuthorFilter(authenticationManager()))
+//                .sessionManagement()
+//                // 设置Session的创建策略为：Spring Security永不创建HttpSession 不使用HttpSession来获取SecurityContext
+//                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+//                .and()
+//                // 异常处理
+//                .exceptionHandling()
+//                // 匿名用户访问无权限资源时的异常
+//                .authenticationEntryPoint(new JWTAuthenticationEntryPoint());
 
     }
 

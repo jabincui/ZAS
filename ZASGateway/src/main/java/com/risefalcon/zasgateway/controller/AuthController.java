@@ -1,87 +1,89 @@
 package com.risefalcon.zasgateway.controller;
 
-
 import com.alibaba.fastjson.JSON;
-import com.risefalcon.zasgateway.config.Constant;
-import com.risefalcon.zasgateway.model.UserRole;
-import com.risefalcon.zasgateway.model.User;
+import com.risefalcon.zasgateway.util.Constant;
+import com.risefalcon.zasgateway.security_model.Signup;
+import com.risefalcon.zasgateway.security_model.UserRole;
+import com.risefalcon.zasgateway.security_model.User;
 import com.risefalcon.zasgateway.service.RedisService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-
-// TODO 自定义注册url
 @Slf4j
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
-
     @Autowired
-    RedisService redisService;
-
-//    @PostMapping("/user")
-//    public String signup(@RequestBody User user) {
-//        if (user == null || user.getUsername() ==null || user.getPassword() == null)
-//            return "INVALID";
-//        QueryWrapper<User> uqw = new QueryWrapper<>();
-//        uqw.eq("username", user.getUsername());
-//        if (userService.getOne(uqw) != null) return "EXIST";
-//        userService.save(user);
-//        roleService.save(new Role(user.getUsername(), "USER"));
-//        return "PASS";
-//    }
+    private RedisService redisService;
 
     /**
      * 注册
-     * @param username 用户名
+     * @param username 用户名（唯一，不可修改）
      * @param password 密码（仅支持明文）
-     * @param roles 角色，多角色用空格分隔，角色对应一种或几种权限，在角色-权限表中查
-     * @return 处理状态
+     * @param signupId 用于获取角色池
+     * @return
+     *      INVALID：任何参数为空或是空串
+     *      EXIST：username已存在
+     *      NOT_EXIST：signupId不存在
      */
     @PostMapping("/signup")
     public String signup(@RequestHeader String username,
                          @RequestHeader String password,
-                         @RequestHeader("roles") String roles) {
-        if (redisService.exist("user", username)) {
+                         @RequestHeader String signupId) {
+        if (username == null || username.equals("") || password == null
+                || password.equals("") || signupId == null || signupId.equals("")) {
+            return Constant.INVALID;
+        }
+
+        if (redisService.exist(Constant.USER, username)) {
             log.info("Username collapsed.");
             return Constant.EXIST;
         }
-        redisService.put("user", username,
-                JSON.toJSONString(new User(username, password)));
-        String[]  roleArr = roles.split(" ");
-        for (String role: roleArr) {
-            redisService.put("role", username + new Date().getTime(),
-                    JSON.toJSONString(new UserRole(username, role))
+
+        User user = new User(username, password);
+        redisService.put(Constant.USER, user.getUsername(), JSON.toJSONString(user));
+
+        if (!redisService.exist(Constant.SIGNUP, signupId)) {
+            return Constant.NOT_EXIST;
+        }
+        for (String roleId: redisService
+                .get(Constant.SIGNUP, signupId, Signup.class)
+                .getRolesId()) {
+            log.info("roles id: " + roleId);
+            if (!redisService.exist(Constant.ROLE, roleId)) {
+                continue;
+            }
+
+            UserRole userRole = new UserRole(user.getUsername(), roleId);
+            redisService.put(Constant.USER_ROLE, userRole.getId(),
+                    JSON.toJSONString(userRole)
             );
         }
 
-
-        log.info(redisService.getValues("role", UserRole.class).toString());
         return Constant.PASS;
     }
 
 
-    /**
-     *
-     * @return 空表返回 EMPTY
-     */
-    @GetMapping("/all_registered_roles")
-    public String getRegisteredRoles() {
-        List<String> registeredRoles =
-                redisService.getValues("registered_role", String.class);
-        if (registeredRoles == null) {
-            log.info("null");
-            return Constant.EMPTY;
-        }
-        if (registeredRoles.size() == 0) {
-            log.info("size 0");
-            return Constant.EMPTY;
-        }
-        return JSON.toJSONString(registeredRoles);
-    }
-    
+
+
+//    /**
+//     *
+//     * @return 空表返回 EMPTY
+//     */
+//    @GetMapping("/all_registered_roles")
+//    public String getRegisteredRoles() {
+//        List<String> registeredRoles =
+//                redisService.getValues("registered_role", String.class);
+//        if (registeredRoles == null) {
+//            log.info("null");
+//            return Constant.EMPTY;
+//        }
+//        if (registeredRoles.size() == 0) {
+//            log.info("size 0");
+//            return Constant.EMPTY;
+//        }
+//        return JSON.toJSONString(registeredRoles);
+//    }
+//
 }

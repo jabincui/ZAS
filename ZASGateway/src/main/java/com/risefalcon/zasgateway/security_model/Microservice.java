@@ -1,4 +1,4 @@
-package com.risefalcon.zasgateway.model;
+package com.risefalcon.zasgateway.security_model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

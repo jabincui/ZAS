@@ -1,4 +1,4 @@
-package com.risefalcon.zasgateway.config;
+package com.risefalcon.zasgateway.util;
 
 public class Constant {
 
@@ -16,7 +16,14 @@ public class Constant {
     public static final String AUTHORITY = "ar";
     public static final String ROLE = "role";
     public static final String URL = "url";
-    public static final String PA = "pa";
+    public static final String PA = "PA";
+    public static final String USER = "user";
+    public static final String USER_ROLE = "ur";
+    public static final String SIGNUP = "su";
+
+    public static final String[] INVALID_MS_NAME = {
+            "microservice", "auth", "authority", "role", "url", "user", "user_role", "signup"
+    };
 
 
 

@@ -1,6 +1,7 @@
 package com.risefalcon.zasgateway.config;
 
 import com.risefalcon.zasgateway.service.RedisService;
+import com.risefalcon.zasgateway.util.RouteLocator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.cloud.netflix.zuul.filters.ZuulProperties;

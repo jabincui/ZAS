@@ -1,6 +1,6 @@
 package com.risefalcon.zasgateway.controller;
 
-import com.risefalcon.zasgateway.model.Microservice;
+import com.risefalcon.zasgateway.security_model.Microservice;
 
 public interface MicroserviceController extends BaseController<Microservice> {
 }

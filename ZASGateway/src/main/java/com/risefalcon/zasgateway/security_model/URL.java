@@ -1,4 +1,4 @@
-package com.risefalcon.zasgateway.model;
+package com.risefalcon.zasgateway.security_model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,16 +9,14 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Authority {
+public class URL {
     private String id;
     private String msId;
-    private String urlId;
-    private String roleId;
+    private String path;
 
-    public Authority(String msId, String url, String roleId) {
+    public URL(String msId, String path) {
         this.id = UUID.randomUUID().toString();
         this.msId = msId;
-        this.urlId = url;
-        this.roleId = roleId;
+        this.path = path;
     }
 }

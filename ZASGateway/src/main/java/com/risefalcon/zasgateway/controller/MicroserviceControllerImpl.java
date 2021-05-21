@@ -2,9 +2,9 @@ package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.risefalcon.zasgateway.config.Constant;
-import com.risefalcon.zasgateway.model.Microservice;
-import com.risefalcon.zasgateway.model.Role;
+import com.risefalcon.zasgateway.util.Constant;
+import com.risefalcon.zasgateway.security_model.Microservice;
+import com.risefalcon.zasgateway.security_model.Role;
 import com.risefalcon.zasgateway.service.RedisService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +17,7 @@ import java.util.Set;
 @RequestMapping("/microservice")
 public class MicroserviceControllerImpl implements MicroserviceController{
     @Autowired
-    RedisService redisService;
+    private RedisService redisService;
 
     /**
      * 新建微服务
@@ -26,7 +26,7 @@ public class MicroserviceControllerImpl implements MicroserviceController{
      *           id           | 不用传，会忽略
      *           name         | 新微服务名
      * @return
-     *      INVALID：找不到name或name是空串
+     *      INVALID：找不到name，name是空串，或已被系统占用
      *      EXIST：已存在此名称的微服务
      *      PASS：正常通过
      */
@@ -38,6 +38,13 @@ public class MicroserviceControllerImpl implements MicroserviceController{
             jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
             return jsonObject;
         }
+        for (String invalidName: Constant.INVALID_MS_NAME) {
+            if (ms.getName().equals(invalidName)) {
+                jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
+                return jsonObject;
+            }
+        }
+
         for (Microservice m : redisService.getValues(Constant.MICROSERVICE, Microservice.class)) {
             if (m.getName().equals(ms.getName())) {
                 jsonObject.put(Constant.RESULT_KEY, Constant.EXIST);

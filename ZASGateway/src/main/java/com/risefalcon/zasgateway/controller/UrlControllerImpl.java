@@ -2,14 +2,13 @@ package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.risefalcon.zasgateway.config.Constant;
-import com.risefalcon.zasgateway.model.Authority;
-import com.risefalcon.zasgateway.model.URL;
+import com.risefalcon.zasgateway.util.Constant;
+import com.risefalcon.zasgateway.security_model.Authority;
+import com.risefalcon.zasgateway.security_model.URL;
 import com.risefalcon.zasgateway.service.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import java.util.List;
 
 @RestController
@@ -27,12 +26,18 @@ public class UrlControllerImpl implements UrlController {
             jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
             return jsonObject;
         }
+
+        if (!redisService.exist(Constant.MICROSERVICE, url.getMsId())) {
+            jsonObject.put(Constant.MICROSERVICE, Constant.NOT_EXIST);
+            return jsonObject;
+        }
+
         for (URL u: redisService.getValues(Constant.URL, URL.class)) {
             if (u.getMsId().equals(url.getMsId())
                     && u.getPath().equals(url.getPath())) {
                 jsonObject.put(Constant.RESULT_KEY, Constant.EXIST);
+                return jsonObject;
             }
-            return jsonObject;
         }
         URL u = new URL(url.getMsId(), url.getPath());
         redisService.put(Constant.URL, u.getId(), JSON.toJSONString(u));
@@ -82,6 +87,23 @@ public class UrlControllerImpl implements UrlController {
 
     @Override
     public List<URL> getAll() {
-        return null;
+        return redisService.getValues(Constant.URL, URL.class);
+    }
+
+    @Override
+    public JSONObject getByMsId(String msId) {
+        JSONObject jsonObject = new JSONObject();
+        if (msId == null || msId.equals("")) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
+        }
+        if (!redisService.exist(Constant.MICROSERVICE, msId)) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.NOT_EXIST);
+            return jsonObject;
+        }
+        List<URL> urls = redisService.getValues(Constant.URL, URL.class);
+        urls.removeIf(u -> !u.getMsId().equals(msId));
+        jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
+        jsonObject.put(Constant.OBJ, urls);
+        return jsonObject;
     }
 }

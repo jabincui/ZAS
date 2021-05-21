@@ -1,7 +1,8 @@
-package com.risefalcon.zasgateway.config;
+package com.risefalcon.zasgateway.util;
 
-import com.risefalcon.zasgateway.model.Microservice;
+import com.risefalcon.zasgateway.security_model.Microservice;
 import com.risefalcon.zasgateway.service.RedisService;
+import com.risefalcon.zasgateway.util.Constant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.netflix.zuul.filters.RefreshableRouteLocator;
 import org.springframework.cloud.netflix.zuul.filters.SimpleRouteLocator;

@@ -1,4 +1,4 @@
-package com.risefalcon.zasgateway.model;
+package com.risefalcon.zasgateway.security_model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,9 +19,9 @@ public class UserRole {
     private String userId;
     private String roleId;
 
-    public UserRole(String username, String name) {
+    public UserRole(String userId, String roleId) {
         this.id = UUID.randomUUID().toString();
-        this.userId = username;
-        this.roleId = name;
+        this.userId = userId;
+        this.roleId = roleId;
     }
 }
