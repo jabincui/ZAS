@@ -2,6 +2,7 @@ package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.risefalcon.zasgateway.security_model.URL;
 import com.risefalcon.zasgateway.util.Constant;
 import com.risefalcon.zasgateway.security_model.Authority;
 import com.risefalcon.zasgateway.service.RedisService;
@@ -77,4 +78,21 @@ public class AuthorityControllerImpl implements AuthorityController {
         return redisService.getValues(Constant.AUTHORITY, Authority.class);
     }
 
+
+    @Override
+    public JSONObject getByMsId(String msId) {
+        JSONObject jsonObject = new JSONObject();
+        if (msId == null || msId.equals("")) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
+        }
+        if (!redisService.exist(Constant.MICROSERVICE, msId)) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.NOT_EXIST);
+            return jsonObject;
+        }
+        List<Authority> auths = redisService.getValues(Constant.AUTHORITY, Authority.class);
+        auths.removeIf(auth -> !auth.getMsId().equals(msId));
+        jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
+        jsonObject.put(Constant.OBJ, auths);
+        return jsonObject;
+    }
 }
