@@ -58,7 +58,10 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
      * 若验证成功 生成token并返回
      */
     @Override
-    protected void successfulAuthentication(HttpServletRequest request,HttpServletResponse response,FilterChain chain,Authentication authResult) throws IOException {
+    protected void successfulAuthentication(HttpServletRequest request,
+                                            HttpServletResponse response,
+                                            FilterChain chain,
+                                            Authentication authResult) throws IOException {
         User user= (User) authResult.getPrincipal();
 
         // 从User中获取权限信息
@@ -83,7 +86,9 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
      * 验证【失败】调用的方法
      */
     @Override
-    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
+    protected void unsuccessfulAuthentication(HttpServletRequest request,
+                                              HttpServletResponse response,
+                                              AuthenticationException failed) throws IOException, ServletException {
         String returnData="";
         // 账号过期
         if (failed instanceof AccountExpiredException) {

@@ -20,6 +20,7 @@ public class Constant {
     public static final String USER = "user";
     public static final String USER_ROLE = "ur";
     public static final String SIGNUP = "su";
+    public static final String SYSADMIN = "72cd0349-7fa5-4565-950b-187d5c0e16f7";
 
     public static final String[] INVALID_MS_NAME = {
             "microservice", "auth", "authority", "role", "url", "user", "user_role", "signup"

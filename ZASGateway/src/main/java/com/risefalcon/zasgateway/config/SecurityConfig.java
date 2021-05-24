@@ -1,8 +1,7 @@
 package com.risefalcon.zasgateway.config;
 
-import com.risefalcon.zasgateway.security_model.Authority;
-import com.risefalcon.zasgateway.security_model.Microservice;
-import com.risefalcon.zasgateway.security_model.URL;
+import com.alibaba.fastjson.JSONObject;
+import com.risefalcon.zasgateway.security_model.*;
 import com.risefalcon.zasgateway.security.JWTAuthenticationEntryPoint;
 import com.risefalcon.zasgateway.security.JWTAuthenticationFilter;
 import com.risefalcon.zasgateway.security.JWTTokenAuthorFilter;
@@ -47,14 +46,37 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
+//        // 仅执行一次
+//        User userSysAdmin = new User("cnc2020", "cnc2020");
+//        redisService.put(Constant.USER, userSysAdmin.getUsername(),
+//                JSONObject.toJSONString(userSysAdmin));
+//        Microservice zas = new Microservice("ZASGateway");
+//        redisService.put(Constant.MICROSERVICE, zas.getId(),
+//                JSONObject.toJSONString(zas));
+//        Role roleSysAdmin = new Role(zas.getId(), Constant.SYSADMIN);
+//        redisService.put(Constant.ROLE, roleSysAdmin.getId(),
+//                JSONObject.toJSONString(roleSysAdmin));
+//        UserRole userRoleSysAdmin = new UserRole(userSysAdmin.getUsername(), roleSysAdmin.getId());
+//        redisService.put(Constant.USER_ROLE, userRoleSysAdmin.getRoleId(),
+//                JSONObject.toJSONString(userRoleSysAdmin));
+
+
         // 跨域共享
         http.cors()
                 .and()
                 // 跨域伪造请求限制无效
                 .csrf().disable()
                 .authorizeRequests()
-                // 访问/test/**需要USER角色
-                // TODO: 自定义拦截和权限规则
+                // 控制台访问控制
+                .antMatchers(
+                        "/authority/**",
+                        "/microservice/**",
+//                        "/role/**",
+                        "/signup/**",
+                        "/url/**"
+//                        "/user/**",
+//                        "/user_role/**"
+                ).hasRole(Constant.SYSADMIN)
                 // 放行GET和静态资源
                 .antMatchers(
                         "/*.html",
@@ -64,6 +86,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/webSocket/**"
                 ).permitAll();
 
+        // 从AUTHORITY表中取出所有路径-角色关系
         for (Authority authority: redisService.getValues(Constant.AUTHORITY, Authority.class)) {
             String msName = redisService.get(Constant.MICROSERVICE, authority.getMsId(), Microservice.class).getName();
             String path = redisService.get(Constant.URL, authority.getUrlId(), URL.class).getPath();

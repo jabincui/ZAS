@@ -2,7 +2,10 @@ package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.risefalcon.zasgateway.security_model.User;
+import com.risefalcon.zasgateway.service.RedisService;
 import com.risefalcon.zasgateway.util.Constant;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -11,6 +14,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/user")
 public class UserControllerImpl implements UserController {
+
+    @Autowired
+    private RedisService redisService;
 
     @Override
     public JSONObject ins(User user) {
@@ -31,6 +37,6 @@ public class UserControllerImpl implements UserController {
 
     @Override
     public List<User> getAll() {
-        return null;
+        return redisService.getValues(Constant.USER, User.class);
     }
 }
