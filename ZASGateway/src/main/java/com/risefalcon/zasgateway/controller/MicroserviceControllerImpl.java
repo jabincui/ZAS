@@ -126,4 +126,21 @@ public class MicroserviceControllerImpl implements MicroserviceController{
     public Set<Object> getKeys() {
         return redisService.getKeys(Constant.MICROSERVICE);
     }
+
+    @Override
+    public JSONObject getById(String id) {
+        JSONObject jsonObject = new JSONObject();
+        if (id == null || id.equals("")) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
+            return jsonObject;
+        }
+        if (!redisService.exist(Constant.MICROSERVICE, id)) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
+            return jsonObject;
+        }
+        jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
+        jsonObject.put(Constant.OBJ,
+                redisService.get(Constant.MICROSERVICE, id, Microservice.class));
+        return jsonObject;
+    }
 }

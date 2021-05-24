@@ -130,22 +130,11 @@ public class RoleControllerImpl implements  RoleController{
         return redisService.getValues(Constant.ROLE, Role.class);
     }
 
-    @GetMapping("/by/{msId}")
-    public List<Role> getByMs(@PathVariable(value = "msId") String msId) {
-        List<Role> result = new ArrayList<>();
-        for (Role r: redisService.getValues(Constant.ROLE, Role.class)) {
-            if (r.getMsId().equals(msId)) {
-                result.add(r);
-            }
-        }
-        return result;
-    }
 
     @GetMapping("/keys")
     public Set<Object> getKeys() {
         return redisService.getKeys(Constant.ROLE);
     }
-
 
     @Override
     public JSONObject getByMsId(String msId) {
