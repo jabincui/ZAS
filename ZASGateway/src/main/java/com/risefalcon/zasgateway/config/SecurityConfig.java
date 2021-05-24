@@ -71,11 +71,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(
                         "/authority/**",
                         "/microservice/**",
-//                        "/role/**",
+                        "/role/**",
                         "/signup/**",
-                        "/url/**"
-//                        "/user/**",
-//                        "/user_role/**"
+                        "/url/**",
+                        "/user/**",
+                        "/user_role/**"
                 ).hasRole(Constant.SYSADMIN)
                 // 放行GET和静态资源
                 .antMatchers(
