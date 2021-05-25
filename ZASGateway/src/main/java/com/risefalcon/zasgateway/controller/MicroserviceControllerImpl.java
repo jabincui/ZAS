@@ -2,9 +2,8 @@ package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.risefalcon.zasgateway.security_model.*;
 import com.risefalcon.zasgateway.util.Constant;
-import com.risefalcon.zasgateway.security_model.Microservice;
-import com.risefalcon.zasgateway.security_model.Role;
 import com.risefalcon.zasgateway.service.RedisService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,7 +108,25 @@ public class MicroserviceControllerImpl implements MicroserviceController{
         if (!redisService.exist(Constant.MICROSERVICE, id)) {
             return Constant.NOT_EXIST;
         }
+
+        // 删除全部相关实例
         redisService.delete(Constant.MICROSERVICE, id);
+        for (Authority a: redisService.getValues(Constant.AUTHORITY, Authority.class)) {
+            if (a.getMsId().equals(id)) {
+                redisService.delete(Constant.AUTHORITY, a.getId());
+            }
+        }
+        for (Role r: redisService.getValues(Constant.ROLE, Role.class)) {
+            if (r.getMsId().equals(id)) {
+                redisService.delete(Constant.ROLE, r.getId());
+            }
+        }
+        for (URL u: redisService.getValues(Constant.URL, URL.class)) {
+            if (u.getMsId().equals(id)) {
+                redisService.delete(Constant.URL, u.getId());
+            }
+        }
+
         return Constant.PASS;
     }
 
