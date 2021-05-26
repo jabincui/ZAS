@@ -88,6 +88,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         // 从AUTHORITY表中取出所有路径-角色关系
         for (Authority authority: redisService.getValues(Constant.AUTHORITY, Authority.class)) {
+            if (!redisService.exist(Constant.MICROSERVICE, authority.getMsId())) {
+                continue;
+            }
             String msName = redisService.get(Constant.MICROSERVICE, authority.getMsId(), Microservice.class).getName();
             String path = redisService.get(Constant.URL, authority.getUrlId(), URL.class).getPath();
             String role = authority.getRoleId();

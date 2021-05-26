@@ -129,4 +129,9 @@ hash 类型其实原理和 string 一样的，但是有两个 key，使用 strin
     public Set<Object> getKeys(String h) {
         return stringRedisTemplate.opsForHash().keys(h);
     }
+
+    public void deleteAll(String h) {
+        stringRedisTemplate.opsForHash().delete(h,
+                stringRedisTemplate.opsForHash().keys(h).toArray());
+    }
 }
