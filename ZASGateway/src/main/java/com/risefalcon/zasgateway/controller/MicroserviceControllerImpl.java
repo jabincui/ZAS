@@ -136,7 +136,9 @@ public class MicroserviceControllerImpl implements MicroserviceController{
      */
     @Override
     public List<Microservice> getAll() {
-        return redisService.getValues(Constant.MICROSERVICE, Microservice.class);
+        List<Microservice> microservices = redisService.getValues(Constant.MICROSERVICE, Microservice.class);
+        microservices.removeIf(ms -> ms.getName().equals("ZASGateway"));
+        return microservices;
     }
 
     @GetMapping("/keys")
