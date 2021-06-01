@@ -6,8 +6,12 @@ import com.risefalcon.zasgateway.security_model.*;
 import com.risefalcon.zasgateway.util.Constant;
 import com.risefalcon.zasgateway.service.RedisService;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -160,6 +164,143 @@ public class MicroserviceControllerImpl implements MicroserviceController{
         jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
         jsonObject.put(Constant.OBJ,
                 redisService.get(Constant.MICROSERVICE, id, Microservice.class));
+        return jsonObject;
+    }
+
+    @GetMapping("/table/url-role")
+    public JSONObject getUrlRoleTableById(String id) {
+        JSONObject jsonObject = new JSONObject();
+        if (id == null || id.equals("")) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
+            return jsonObject;
+        }
+        if (!redisService.exist(Constant.MICROSERVICE, id)) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.NOT_EXIST);
+            return jsonObject;
+        }
+        jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
+
+        List<URL> urls = redisService.getValues(Constant.URL, URL.class);
+        urls.removeIf(url -> !url.getMsId().equals(id));
+        jsonObject.put(Constant.URL, urls);
+
+        List<Role> roles = redisService.getValues(Constant.ROLE, Role.class);
+        roles.removeIf(role -> !role.getMsId().equals(id));
+        jsonObject.put(Constant.ROLE, roles);
+
+        List<String> rolesId = new ArrayList<>();
+        for (Role role: roles) {
+            rolesId.add(role.getId());
+        }
+
+        List<UserRole> userRoles = redisService.getValues(Constant.USER_ROLE, UserRole.class);
+        userRoles.removeIf(userRole -> !rolesId.contains(userRole.getRoleId()));
+
+        jsonObject.put(Constant.USER_ROLE, userRoles);
+        return jsonObject;
+    }
+
+
+    /**
+     * 根据微服务id查询它的角色，以及每一个角色对应的url
+     * @param id msId
+     * @return
+     */
+    @GetMapping("/role-url")
+    public JSONObject getUrlRoleById(@RequestBody String id) {
+        JSONObject jsonObject = new JSONObject();
+        if (id == null || id.equals("")) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
+            return jsonObject;
+        }
+        if (!redisService.exist(Constant.MICROSERVICE, id)) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.NOT_EXIST);
+            return jsonObject;
+        }
+        jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
+
+        List<Role> roles = redisService.getValues(Constant.ROLE, Role.class);
+        roles.removeIf(role -> !role.getMsId().equals(id));
+
+        List<Authority> authorities = redisService.getValues(Constant.AUTHORITY, Authority.class);
+        authorities.removeIf(authority -> !authority.getMsId().equals(id));
+
+        HashMap<String, List<URL>> map = new HashMap<>();
+
+        for (Role role: roles) {
+            map.put(role.getId(), new ArrayList<>());
+        }
+        for (Authority authority: authorities) {
+            map.get(authority.getRoleId()).add(
+                    redisService.get(Constant.URL, authority.getUrlId(), URL.class)
+            );
+        }
+        jsonObject.put(Constant.OBJ, map);
+        return jsonObject;
+    }
+
+    @GetMapping("/role-signup")
+    public JSONObject getSignupRoleById(@RequestBody String id) {
+        JSONObject jsonObject = new JSONObject();
+        if (id == null || id.equals("")) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
+            return jsonObject;
+        }
+        if (!redisService.exist(Constant.MICROSERVICE, id)) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.NOT_EXIST);
+            return jsonObject;
+        }
+        jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
+
+        List<Role> roles = redisService.getValues(Constant.ROLE, Role.class);
+        roles.removeIf(role -> !role.getMsId().equals(id));
+
+        List<Signup> signups = redisService.getValues(Constant.SIGNUP, Signup.class);
+
+        HashMap<String, List<Signup>> map = new HashMap<>();
+
+        for (Role role: roles) {
+            map.put(role.getId(), new ArrayList<>());
+        }
+
+        for (Signup signup: signups) {
+            for (String roleId: signup.getRolesId()) {
+                map.get(roleId).add(signup);
+            }
+        }
+        jsonObject.put(Constant.OBJ, map);
+        return jsonObject;
+    }
+
+    @GetMapping("/role-user")
+    public JSONObject getUserRoleById(@RequestBody String id) {
+        JSONObject jsonObject = new JSONObject();
+        if (id == null || id.equals("")) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
+            return jsonObject;
+        }
+        if (!redisService.exist(Constant.MICROSERVICE, id)) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.NOT_EXIST);
+            return jsonObject;
+        }
+        jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
+
+        List<Role> roles = redisService.getValues(Constant.ROLE, Role.class);
+        roles.removeIf(role -> !role.getMsId().equals(id));
+
+        List<UserRole> userRoles = redisService.getValues(Constant.USER_ROLE, UserRole.class);
+
+        HashMap<String, List<User>> map = new HashMap<>();
+
+        for (Role role: roles) {
+            map.put(role.getId(), new ArrayList<>());
+        }
+        for (UserRole userRole: userRoles) {
+            map.get(userRole.getRoleId()).add(
+                    redisService.get(Constant.USER, userRole.getUserId(), User.class)
+            );
+        }
+        jsonObject.put(Constant.OBJ, map);
         return jsonObject;
     }
 }

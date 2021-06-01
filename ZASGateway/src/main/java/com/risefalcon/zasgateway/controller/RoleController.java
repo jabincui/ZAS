@@ -8,4 +8,8 @@ public interface RoleController extends BaseController<Role> {
 
     @GetMapping("/by/{msId}")
     JSONObject getByMsId(@PathVariable String msId);
+
+//    @GetMapping("/by/id/{id}")
+//    JSONObject getById(@PathVariable String id);
+
 }
