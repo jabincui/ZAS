@@ -1,9 +1,11 @@
 package com.risefalcon.zasgateway.security;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.risefalcon.zasgateway.service.UserRoleServiceImpl;
+import com.risefalcon.zasgateway.service.UserServiceImpl;
 import com.risefalcon.zasgateway.util.Constant;
 import com.risefalcon.zasgateway.security_model.UserRole;
 import com.risefalcon.zasgateway.security_model.User;
-import com.risefalcon.zasgateway.service.RedisService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,7 +21,9 @@ import java.util.List;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
-    RedisService redisService;
+    private UserServiceImpl userService;
+    @Autowired
+    private UserRoleServiceImpl userRoleService;
 
     @Override
     public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException {
@@ -29,17 +33,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         }
 
         // 调用方法查询用户
-        User user = redisService.get(Constant.USER, s, User.class);
+        User user = userService.getById(s);
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
 
         // 筛选用户所有的角色
-        List<UserRole> userRoles = redisService.getValues(Constant.USER_ROLE, UserRole.class);
-        log.info("user roles: " + userRoles);
-        userRoles.removeIf(ur -> !ur.getUserId().equals(s));
-        log.info("user roles: " + userRoles);
+        List<UserRole> userRoles = userRoleService
+                .list(new QueryWrapper<UserRole>().eq(UserRole.USERID, s));
 
         for (UserRole userRole : userRoles) {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + userRole.getRoleId()));

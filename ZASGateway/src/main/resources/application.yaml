@@ -5,9 +5,35 @@ eureka:
     service-url:
       defaultZone: http://localhost:8460/eureka
 
+
 spring:
   application:
     name: ZASGateway
+  datasource:
+    username: root
+    password: 123456
+    url: jdbc:mysql://127.0.0.1:3306/zas
+    type: com.alibaba.druid.pool.DruidDataSource
+    initialSize: 5
+    minIdle: 5
+    maxActive: 20
+    maxWait: 60000
+    timeBetweenEvictionRunsMillis: 60000
+    minEvictableIdleTimeMills: 300000
+    validationQuery: SELECT 1 FROM DUAL
+    testWhileIdle: true
+    testOnBorrow: false
+    testOnReturn: false
+    poolPreparedStatements: true
+    filters: stat,wall,log4j
+    maxPoolPreparedStatementPerConnectionSize: 20
+    useGlobalDataSourceStat: true
+    connectionProperties: druid.stat.mergeSq=true;druid.stat.slowSqlMillis=500
+    schema:
+      - classpath:sql/server_init.sql
+    initialization-mode: ALWAYS
+
+
   redis:
     host: 47.93.49.119  #配置redis的主机地址，需要修改成自己的
     database: 5

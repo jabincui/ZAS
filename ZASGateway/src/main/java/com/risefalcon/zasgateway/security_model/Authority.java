@@ -10,6 +10,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Authority {
+    public static final String ID = "id";
+    public static final String MSID = "ms_id";
+    public static final String URLID = "url_id";
+    public static final String ROLEID = "role_id";
+
     private String id;
     private String msId;
     private String urlId;

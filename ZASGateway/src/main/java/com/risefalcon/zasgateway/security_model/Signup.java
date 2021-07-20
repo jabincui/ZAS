@@ -12,6 +12,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Signup {
+    public static final String ID = "id";
+    public static final String NAME = "name";
+    public static final String ROLESID = "roles_id";
+
     private String id;
     private String name;
     private List<String> rolesId;

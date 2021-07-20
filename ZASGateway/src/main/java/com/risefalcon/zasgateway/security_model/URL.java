@@ -10,6 +10,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class URL {
+    public static final String ID = "id";
+    public static final String MSID = "ms_id";
+    public static final String PATH = "path";
+
     private String id;
     private String msId;
     private String path;

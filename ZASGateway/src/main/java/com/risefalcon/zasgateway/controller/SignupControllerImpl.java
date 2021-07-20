@@ -1,6 +1,8 @@
 package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.risefalcon.zasgateway.service.RoleServiceImpl;
+import com.risefalcon.zasgateway.service.SignupServiceImpl;
 import com.risefalcon.zasgateway.util.Constant;
 import com.risefalcon.zasgateway.security_model.Signup;
 import com.risefalcon.zasgateway.service.RedisService;
@@ -18,7 +20,9 @@ import java.util.List;
 public class SignupControllerImpl implements SignupController{
 
     @Autowired
-    private RedisService redisService;
+    private SignupServiceImpl signupService;
+    @Autowired
+    private RoleServiceImpl roleService;
 
     /**
      * 新建注册角色池
@@ -41,8 +45,7 @@ public class SignupControllerImpl implements SignupController{
             return jsonObject;
         }
         Signup su = new Signup(signup.getName());
-        redisService.put(Constant.SIGNUP, su.getId(),
-                JSONObject.toJSONString(su));
+        signupService.save(su);
         jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
         jsonObject.put(Constant.OBJ, su);
         return jsonObject;
@@ -54,10 +57,10 @@ public class SignupControllerImpl implements SignupController{
                 || signup.getName() == null || signup.getName().equals("")) {
             return Constant.INVALID;
         }
-        if (redisService.exist(Constant.SIGNUP, signup.getId())) {
+        if (null == signupService.getById(signup.getId())) {
             return Constant.NOT_EXIST;
         }
-        redisService.put(Constant.SIGNUP, signup.getId(), signup.getName());
+        signupService.save(signup);
         return Constant.PASS;
     }
 
@@ -66,16 +69,16 @@ public class SignupControllerImpl implements SignupController{
         if (id == null || id.equals("")) {
             return Constant.INVALID;
         }
-        if (!redisService.exist(Constant.SIGNUP, id)) {
+        if (null == signupService.getById(id)) {
             return Constant.NOT_EXIST;
         }
-        redisService.delete(Constant.SIGNUP, id);
+        signupService.removeById(id);
         return Constant.PASS;
     }
 
     @Override
     public List<Signup> getAll() {
-        return redisService.getValues(Constant.SIGNUP, Signup.class);
+        return signupService.list();
     }
 
     /**
@@ -98,19 +101,16 @@ public class SignupControllerImpl implements SignupController{
                 || roleId == null || roleId.equals("")) {
             return Constant.INVALID;
         }
-        if ((!redisService.exist(Constant.SIGNUP, id))
-                || (!redisService.exist(Constant.ROLE, roleId))) {
+        Signup signup = signupService.getById(id);
+        if (null == signup || null == roleService.getById(roleId)) {
             return Constant.NOT_EXIST;
         }
-        Signup signup = redisService
-                .get(Constant.SIGNUP, id, Signup.class);
         if (signup.getRolesId().contains(roleId)) {
             return Constant.EXIST;
         }
         signup.getRolesId().add(roleId);
         log.info(signup.getRolesId().toString());
-        redisService.put(Constant.SIGNUP, id,
-                JSONObject.toJSONString(signup));
+        signupService.updateById(signup);
         return Constant.PASS;
     }
 
@@ -122,19 +122,16 @@ public class SignupControllerImpl implements SignupController{
                 || roleId == null || roleId.equals("")) {
             return Constant.INVALID;
         }
-        if ((!redisService.exist(Constant.SIGNUP, id))
-                || (!redisService.exist(Constant.ROLE, roleId))) {
+        Signup signup = signupService.getById(id);
+        if (null == signup || null == roleService.getById(roleId)) {
             return Constant.NOT_EXIST;
         }
-        Signup signup = redisService
-                .get(Constant.SIGNUP, id, Signup.class);
         if (!signup.getRolesId().contains(roleId)) {
             return Constant.NOT_EXIST;
         }
         signup.getRolesId().remove(roleId);
         log.info(signup.getRolesId().toString());
-        redisService.put(Constant.SIGNUP, id,
-                JSONObject.toJSONString(signup));
+        signupService.updateById(signup);
         return Constant.PASS;
     }
 }

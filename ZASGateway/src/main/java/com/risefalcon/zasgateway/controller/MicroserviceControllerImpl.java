@@ -2,6 +2,8 @@ package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.risefalcon.zasgateway.service.MicroserviceServiceImpl;
+import com.risefalcon.zasgateway.service.RoleServiceImpl;
 import com.risefalcon.zasgateway.util.Constant;
 import com.risefalcon.zasgateway.security_model.Microservice;
 import com.risefalcon.zasgateway.security_model.Role;
@@ -17,7 +19,9 @@ import java.util.Set;
 @RequestMapping("/microservice")
 public class MicroserviceControllerImpl implements MicroserviceController{
     @Autowired
-    private RedisService redisService;
+    private MicroserviceServiceImpl microserviceService;
+    @Autowired
+    private RoleServiceImpl roleService;
 
     /**
      * 新建微服务
@@ -45,19 +49,19 @@ public class MicroserviceControllerImpl implements MicroserviceController{
             }
         }
 
-        for (Microservice m : redisService.getValues(Constant.MICROSERVICE, Microservice.class)) {
+        for (Microservice m : microserviceService.list()) {
             if (m.getName().equals(ms.getName())) {
                 jsonObject.put(Constant.RESULT_KEY, Constant.EXIST);
                 return jsonObject;
             }
         }
         Microservice m = new Microservice(ms.getName());
-        redisService.put(Constant.MICROSERVICE, m.getId(), JSON.toJSONString(m));
+        microserviceService.save(m);
 
         // 初始化PERMIT_ALL
         Role role = new Role(m.getId(), "PERMIT_ALL");
         role.setId(Constant.PA + role.getId());
-        redisService.put(Constant.ROLE, role.getId(), JSON.toJSONString(role));
+        roleService.save(role);
 
         jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
         jsonObject.put(Constant.OBJ, m);
@@ -82,13 +86,13 @@ public class MicroserviceControllerImpl implements MicroserviceController{
                 || microservice.getName() == null || microservice.getName().equals("")) {
             return Constant.INVALID;
         }
-        if (!redisService.exist(Constant.MICROSERVICE, microservice.getId())) {
+        if ( null == microserviceService.getById(microservice.getId()) ) {
             return Constant.NOT_EXIST;
         }
-        for (Microservice m : redisService.getValues(Constant.MICROSERVICE, Microservice.class)) {
+        for (Microservice m : microserviceService.list()) {
             if (m.getName().equals(microservice.getName())) return Constant.EXIST;
         }
-        redisService.put(Constant.MICROSERVICE, microservice.getId(), JSON.toJSONString(microservice));
+        microserviceService.save(microservice);
         return Constant.PASS;
     }
 
@@ -106,10 +110,10 @@ public class MicroserviceControllerImpl implements MicroserviceController{
         if (id == null || id.equals("")) {
             return Constant.INVALID;
         }
-        if (!redisService.exist(Constant.MICROSERVICE, id)) {
+        if (null == microserviceService.getById(id)) {
             return Constant.NOT_EXIST;
         }
-        redisService.delete(Constant.MICROSERVICE, id);
+        microserviceService.removeById(id);
         return Constant.PASS;
     }
 
@@ -119,13 +123,13 @@ public class MicroserviceControllerImpl implements MicroserviceController{
      */
     @Override
     public List<Microservice> getAll() {
-        return redisService.getValues(Constant.MICROSERVICE, Microservice.class);
+        return microserviceService.list();
     }
 
-    @GetMapping("/keys")
-    public Set<Object> getKeys() {
-        return redisService.getKeys(Constant.MICROSERVICE);
-    }
+//    @GetMapping("/keys")
+//    public Set<Object> getKeys() {
+//        return redisService.getKeys(Constant.MICROSERVICE);
+//    }
 
     @Override
     public JSONObject getById(String id) {
@@ -134,13 +138,13 @@ public class MicroserviceControllerImpl implements MicroserviceController{
             jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
             return jsonObject;
         }
-        if (!redisService.exist(Constant.MICROSERVICE, id)) {
+        Microservice microservice = microserviceService.getById(id);
+        if (null == microservice) {
             jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
             return jsonObject;
         }
         jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
-        jsonObject.put(Constant.OBJ,
-                redisService.get(Constant.MICROSERVICE, id, Microservice.class));
+        jsonObject.put(Constant.OBJ, microservice);
         return jsonObject;
     }
 }

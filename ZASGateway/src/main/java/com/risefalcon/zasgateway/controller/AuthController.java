@@ -1,11 +1,9 @@
 package com.risefalcon.zasgateway.controller;
 
-import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.risefalcon.zasgateway.security_model.*;
+import com.risefalcon.zasgateway.service.*;
 import com.risefalcon.zasgateway.util.Constant;
-import com.risefalcon.zasgateway.security_model.Signup;
-import com.risefalcon.zasgateway.security_model.UserRole;
-import com.risefalcon.zasgateway.security_model.User;
-import com.risefalcon.zasgateway.service.RedisService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +13,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 public class AuthController {
     @Autowired
-    private RedisService redisService;
+    private UserServiceImpl userService;
+    @Autowired
+    private SignupServiceImpl signupService;
+    @Autowired
+    private RoleService roleService;
+    @Autowired
+    private UserRoleService userRoleService;
 
     /**
      * 注册
@@ -36,31 +40,27 @@ public class AuthController {
             return Constant.INVALID;
         }
 
-        if (redisService.exist(Constant.USER, username)) {
+        if ( null != userService.getOne(new QueryWrapper<User>().eq(User.USERNAME, username)) ) {
             log.info("Username collapsed.");
             return Constant.EXIST;
         }
-
-        User user = new User(username, password);
-        redisService.put(Constant.USER, user.getUsername(), JSON.toJSONString(user));
-
-        if (!redisService.exist(Constant.SIGNUP, signupId)) {
+        if ( null == signupService.getOne(new QueryWrapper<Signup>().eq(Signup.ID, signupId)) ) {
             return Constant.NOT_EXIST;
         }
-        for (String roleId: redisService
-                .get(Constant.SIGNUP, signupId, Signup.class)
+
+        User user = new User(username, password);
+        userService.save(user);
+        for (String roleId: signupService
+                .getOne(new QueryWrapper<Signup>().eq(Signup.ID, signupId))
                 .getRolesId()) {
             log.info("roles id: " + roleId);
-            if (!redisService.exist(Constant.ROLE, roleId)) {
+            // 验证role id合法性
+            if ( null == roleService.getOne(new QueryWrapper<Role>().eq(Role.ID, roleId)) ) {
                 continue;
             }
-
             UserRole userRole = new UserRole(user.getUsername(), roleId);
-            redisService.put(Constant.USER_ROLE, userRole.getId(),
-                    JSON.toJSONString(userRole)
-            );
+            userRoleService.save(userRole);
         }
-
         return Constant.PASS;
     }
 

@@ -1,6 +1,7 @@
 package com.risefalcon.zasgateway.util;
 
 import com.risefalcon.zasgateway.security_model.Microservice;
+import com.risefalcon.zasgateway.service.MicroserviceServiceImpl;
 import com.risefalcon.zasgateway.service.RedisService;
 import com.risefalcon.zasgateway.util.Constant;
 import lombok.extern.slf4j.Slf4j;
@@ -16,13 +17,14 @@ import java.util.UUID;
 public class RouteLocator extends SimpleRouteLocator
         implements RefreshableRouteLocator {
 
-    private RedisService redisService;
+    private MicroserviceServiceImpl microserviceService;
     private ZuulProperties properties;
 
-    public RouteLocator(String servletPath, ZuulProperties properties, RedisService redisService) {
+    public RouteLocator(String servletPath, ZuulProperties properties,
+                        MicroserviceServiceImpl microserviceService) {
         super(servletPath, properties);
         this.properties = properties;
-        this.redisService = redisService;
+        this.microserviceService = microserviceService;
         log.info("servletPath:{}", servletPath);
 
     }
@@ -63,7 +65,7 @@ public class RouteLocator extends SimpleRouteLocator
     private Map<String, ZuulProperties.ZuulRoute> locateRoutesFromDB() {
         Map<String, ZuulProperties.ZuulRoute> routes = new LinkedHashMap<>();
 
-        for (Microservice microservice: redisService.getValues(Constant.MICROSERVICE, Microservice.class)) {
+        for (Microservice microservice: microserviceService.list()) {
             ZuulProperties.ZuulRoute zuulRoute = new ZuulProperties.ZuulRoute(
                     UUID.randomUUID().toString(), "/" + microservice.getName() + "/**",
                     microservice.getName(), null, true, true, null

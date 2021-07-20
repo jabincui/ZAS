@@ -1,8 +1,11 @@
 package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.risefalcon.zasgateway.security_model.UserRole;
-import com.risefalcon.zasgateway.service.RedisService;
+import com.risefalcon.zasgateway.service.RoleServiceImpl;
+import com.risefalcon.zasgateway.service.UserRoleServiceImpl;
+import com.risefalcon.zasgateway.service.UserServiceImpl;
 import com.risefalcon.zasgateway.util.Constant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,7 +17,11 @@ import java.util.List;
 public class UserRoleControllerImpl implements UserRoleController {
 
     @Autowired
-    private RedisService redisService;
+    private UserRoleServiceImpl userRoleService;
+    @Autowired
+    private UserServiceImpl userService;
+    @Autowired
+    private RoleServiceImpl roleService;
 
     @Override
     public JSONObject ins(UserRole userRole) {
@@ -24,21 +31,19 @@ public class UserRoleControllerImpl implements UserRoleController {
             jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
             return jsonObject;
         }
-        if ((!redisService.exist(Constant.USER, userRole.getUserId()))
-                || (!redisService.exist(Constant.ROLE, userRole.getRoleId()))) {
+        if ( null == userService.getById(userRole.getUserId())
+                || null == roleService.getById(userRole.getRoleId()) ) {
             jsonObject.put(Constant.RESULT_KEY, Constant.NOT_EXIST);
             return jsonObject;
         }
-        for (UserRole ur: redisService.getValues(Constant.USER_ROLE, UserRole.class)) {
-            if (ur.getUserId().equals(userRole.getUserId())
-                    && ur.getRoleId().equals(userRole.getRoleId())) {
-                jsonObject.put(Constant.RESULT_KEY, Constant.EXIST);
-                return jsonObject;
-            }
+        if ( null != userRoleService.getOne(new QueryWrapper<UserRole>()
+                .eq(UserRole.USERID, userRole.getUserId())
+                .eq(UserRole.ROLEID, userRole.getRoleId())) ) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.EXIST);
+            return jsonObject;
         }
         UserRole ur = new UserRole(userRole.getUserId(), userRole.getRoleId());
-        redisService.put(Constant.USER_ROLE, ur.getId(),
-                JSONObject.toJSONString(ur));
+        userRoleService.save(ur);
         jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
         jsonObject.put(Constant.OBJ, ur);
         return jsonObject;
@@ -54,15 +59,15 @@ public class UserRoleControllerImpl implements UserRoleController {
         if (id == null || id.equals("")) {
             return Constant.INVALID;
         }
-        if (!redisService.exist(Constant.USER_ROLE, id)) {
+        if (null == userRoleService.getById(id)) {
             return Constant.NOT_EXIST;
         }
-        redisService.delete(Constant.USER_ROLE, id);
+        userRoleService.removeById(id);
         return Constant.PASS;
     }
 
     @Override
     public List<UserRole> getAll() {
-        return redisService.getValues(Constant.USER_ROLE, UserRole.class);
+        return userRoleService.list();
     }
 }

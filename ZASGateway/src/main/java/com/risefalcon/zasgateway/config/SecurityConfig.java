@@ -6,7 +6,10 @@ import com.risefalcon.zasgateway.security_model.URL;
 import com.risefalcon.zasgateway.security.JWTAuthenticationEntryPoint;
 import com.risefalcon.zasgateway.security.JWTAuthenticationFilter;
 import com.risefalcon.zasgateway.security.JWTTokenAuthorFilter;
+import com.risefalcon.zasgateway.service.AuthorityServiceImpl;
+import com.risefalcon.zasgateway.service.MicroserviceServiceImpl;
 import com.risefalcon.zasgateway.service.RedisService;
+import com.risefalcon.zasgateway.service.URLServiceImpl;
 import com.risefalcon.zasgateway.util.Constant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +36,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Qualifier("userDetailsServiceImpl")
     private UserDetailsService userDetailsService;
     @Autowired
-    private RedisService redisService;
+    private AuthorityServiceImpl authorityService;
+    @Autowired
+    private URLServiceImpl urlService;
+    @Autowired
+    private MicroserviceServiceImpl microserviceService;
 
 
     @Override
@@ -64,9 +71,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/webSocket/**"
                 ).permitAll();
 
-        for (Authority authority: redisService.getValues(Constant.AUTHORITY, Authority.class)) {
-            String msName = redisService.get(Constant.MICROSERVICE, authority.getMsId(), Microservice.class).getName();
-            String path = redisService.get(Constant.URL, authority.getUrlId(), URL.class).getPath();
+        for (Authority authority: authorityService.list()) {
+            String msName = microserviceService.getById(authority.getMsId()).getName();
+            String path = urlService.getById(authority.getUrlId()).getPath();
             String role = authority.getRoleId();
             // 自动补全路径前缀
             String antPattern = "/" + msName + (path.startsWith("/") ? "" : "/") + path;
@@ -156,5 +163,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         firewall.setAllowUrlEncodedDoubleSlash(true);
         return firewall;
     }
-
 }

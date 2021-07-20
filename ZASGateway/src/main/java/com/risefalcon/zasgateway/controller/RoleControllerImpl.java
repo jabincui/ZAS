@@ -2,6 +2,10 @@ package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.risefalcon.zasgateway.service.AuthorityServiceImpl;
+import com.risefalcon.zasgateway.service.MicroserviceServiceImpl;
+import com.risefalcon.zasgateway.service.RoleServiceImpl;
 import com.risefalcon.zasgateway.util.Constant;
 import com.risefalcon.zasgateway.security_model.Authority;
 import com.risefalcon.zasgateway.security_model.Role;
@@ -22,7 +26,11 @@ import java.util.Set;
 public class RoleControllerImpl implements  RoleController{
 
     @Autowired
-    private RedisService redisService;
+    private RoleServiceImpl roleService;
+    @Autowired
+    private AuthorityServiceImpl authorityService;
+    @Autowired
+    private MicroserviceServiceImpl microserviceService;
 
     /**
      * 新建角色
@@ -45,7 +53,10 @@ public class RoleControllerImpl implements  RoleController{
             jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
             return jsonObject;
         }
-        for (Role r: redisService.getValues(Constant.ROLE, Role.class)) {
+        /**
+         * todo: 这里有一个疑似bug
+         */
+        for (Role r: roleService.list()) {
             if (r.getMsId().equals(role.getMsId())
                     && r.getName().equals(role.getName())) {
                 jsonObject.put(Constant.RESULT_KEY, Constant.EXIST);
@@ -54,7 +65,7 @@ public class RoleControllerImpl implements  RoleController{
         }
 
         Role r = new Role(role.getMsId(), role.getName());
-        redisService.put(Constant.ROLE, r.getId(), JSON.toJSONString(r));
+        roleService.save(r);
 
         jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
         jsonObject.put(Constant.OBJ, r);
@@ -78,17 +89,18 @@ public class RoleControllerImpl implements  RoleController{
         if (role.getId() == null || role.getId().equals("")) {
             return Constant.INVALID;
         }
-        if (!redisService.exist(Constant.ROLE, role.getId())) {
+        Role role1 = roleService.getById(role.getId());
+        if (null == role1) {
             return Constant.NOT_EXIST;
         }
-        for (Role r: redisService.getValues(Constant.ROLE, Role.class)) {
+        for (Role r: roleService.list()) {
             if (r.getMsId().equals(role.getMsId())
                     && r.getName().equals(role.getName())) {
                 return Constant.EXIST;
             }
         }
-        role.setMsId(redisService.get(Constant.ROLE, role.getId(), Role.class).getMsId());
-        redisService.put(Constant.ROLE, role.getId(), JSON.toJSONString(role));
+        role.setMsId(role1.getMsId());
+        roleService.saveOrUpdate(role);
         return Constant.PASS;
     }
 
@@ -106,18 +118,13 @@ public class RoleControllerImpl implements  RoleController{
         if (id == null || id.equals("") || id.startsWith(Constant.PA)) {
             return Constant.INVALID;
         }
-        if (!redisService.exist(Constant.ROLE, id)) {
+        Role role = roleService.getById(id);
+        if (null == role) {
             return Constant.NOT_EXIST;
         }
-
         // 删除有关权限项
-        for (Authority authority: redisService.getValues(Constant.AUTHORITY, Authority.class)) {
-            if (authority.getRoleId().equals(id)) {
-                redisService.delete(Constant.AUTHORITY, authority.getId());
-            }
-        }
-
-        redisService.delete(Constant.ROLE, id);
+        authorityService.remove(new QueryWrapper<Authority>().eq(Authority.ROLEID, id));
+        roleService.removeById(id);
         return Constant.PASS;
     }
 
@@ -127,14 +134,14 @@ public class RoleControllerImpl implements  RoleController{
      */
     @Override
     public List<Role> getAll() {
-        return redisService.getValues(Constant.ROLE, Role.class);
+        return roleService.list();
     }
 
 
-    @GetMapping("/keys")
-    public Set<Object> getKeys() {
-        return redisService.getKeys(Constant.ROLE);
-    }
+//    @GetMapping("/keys")
+//    public Set<Object> getKeys() {
+//        return redisService.getKeys(Constant.ROLE);
+//    }
 
     @Override
     public JSONObject getByMsId(String msId) {
@@ -142,12 +149,11 @@ public class RoleControllerImpl implements  RoleController{
         if (msId == null || msId.equals("")) {
             jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
         }
-        if (!redisService.exist(Constant.MICROSERVICE, msId)) {
+        if (null == microserviceService.getById(msId)) {
             jsonObject.put(Constant.RESULT_KEY, Constant.NOT_EXIST);
             return jsonObject;
         }
-        List<Role> roles = redisService.getValues(Constant.ROLE, Role.class);
-        roles.removeIf(role -> !role.getMsId().equals(msId));
+        List<Role> roles = roleService.list(new QueryWrapper<Role>().eq(Role.MSID, msId));
         jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
         jsonObject.put(Constant.OBJ, roles);
         return jsonObject;

@@ -2,6 +2,10 @@ package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.risefalcon.zasgateway.service.AuthorityServiceImpl;
+import com.risefalcon.zasgateway.service.MicroserviceServiceImpl;
+import com.risefalcon.zasgateway.service.URLServiceImpl;
 import com.risefalcon.zasgateway.util.Constant;
 import com.risefalcon.zasgateway.security_model.Authority;
 import com.risefalcon.zasgateway.security_model.URL;
@@ -16,7 +20,11 @@ import java.util.List;
 public class UrlControllerImpl implements UrlController {
 
     @Autowired
-    private RedisService redisService;
+    private URLServiceImpl urlService;
+    @Autowired
+    private MicroserviceServiceImpl microserviceService;
+    @Autowired
+    private AuthorityServiceImpl authorityService;
 
     @Override
     public JSONObject ins(URL url) {
@@ -27,20 +35,20 @@ public class UrlControllerImpl implements UrlController {
             return jsonObject;
         }
 
-        if (!redisService.exist(Constant.MICROSERVICE, url.getMsId())) {
+        if (null == microserviceService.getById(url.getMsId())) {
             jsonObject.put(Constant.MICROSERVICE, Constant.NOT_EXIST);
             return jsonObject;
         }
 
-        for (URL u: redisService.getValues(Constant.URL, URL.class)) {
-            if (u.getMsId().equals(url.getMsId())
-                    && u.getPath().equals(url.getPath())) {
-                jsonObject.put(Constant.RESULT_KEY, Constant.EXIST);
-                return jsonObject;
-            }
+        if ( null != urlService.getOne(new QueryWrapper<URL>()
+                .eq(URL.MSID, url.getMsId())
+                .eq(URL.PATH, url.getPath())) ) {
+            jsonObject.put(Constant.RESULT_KEY, Constant.EXIST);
+            return jsonObject;
         }
+
         URL u = new URL(url.getMsId(), url.getPath());
-        redisService.put(Constant.URL, u.getId(), JSON.toJSONString(u));
+        urlService.save(u);
         jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
         jsonObject.put(Constant.OBJ, u);
         return jsonObject;
@@ -51,17 +59,17 @@ public class UrlControllerImpl implements UrlController {
         if (url.getId() == null || url.getId().equals("")) {
             return Constant.INVALID;
         }
-        if (!redisService.exist(Constant.URL, url.getId())) {
+        URL url1 = urlService.getById(url.getId());
+        if ( null == url1 ) {
             return Constant.NOT_EXIST;
         }
-        for (URL u: redisService.getValues(Constant.URL, URL.class)) {
-            if (u.getMsId().equals(url.getMsId())
-                    && u.getPath().equals(url.getPath())) {
-                return Constant.EXIST;
-            }
+        if (null != urlService.getOne(new QueryWrapper<URL>()
+                .eq(URL.MSID, url.getMsId())
+                .eq(URL.PATH, url.getPath())) ) {
+            return Constant.EXIST;
         }
-        url.setMsId(redisService.get(Constant.URL, url.getId(), URL.class).getMsId());
-        redisService.put(Constant.URL, url.getId(), JSON.toJSONString(url));
+        url.setMsId(url1.getMsId());
+        urlService.saveOrUpdate(url);
         return Constant.PASS;
     }
 
@@ -70,24 +78,19 @@ public class UrlControllerImpl implements UrlController {
         if (id == null || id.equals("")) {
             return Constant.INVALID;
         }
-        if (!redisService.exist(Constant.URL, id)) {
+        if (null == urlService.getById(id)) {
             return Constant.NOT_EXIST;
         }
 
         // 删除有关权限项
-        for (Authority authority: redisService.getValues(Constant.AUTHORITY, Authority.class)) {
-            if (authority.getUrlId().equals(id)) {
-                redisService.delete(Constant.AUTHORITY, authority.getId());
-            }
-        }
-
-        redisService.delete(Constant.URL, id);
+        authorityService.remove(new QueryWrapper<Authority>().eq(Authority.URLID, id));
+        urlService.removeById(id);
         return Constant.PASS;
     }
 
     @Override
     public List<URL> getAll() {
-        return redisService.getValues(Constant.URL, URL.class);
+        return urlService.list();
     }
 
     @Override
@@ -96,12 +99,11 @@ public class UrlControllerImpl implements UrlController {
         if (msId == null || msId.equals("")) {
             jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
         }
-        if (!redisService.exist(Constant.MICROSERVICE, msId)) {
+        if (null == microserviceService.getById(msId)) {
             jsonObject.put(Constant.RESULT_KEY, Constant.NOT_EXIST);
             return jsonObject;
         }
-        List<URL> urls = redisService.getValues(Constant.URL, URL.class);
-        urls.removeIf(u -> !u.getMsId().equals(msId));
+        List<URL> urls = urlService.list(new QueryWrapper<URL>().eq(URL.MSID, msId));
         jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
         jsonObject.put(Constant.OBJ, urls);
         return jsonObject;

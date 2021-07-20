@@ -13,6 +13,7 @@ import java.util.Set;
 
 @Slf4j
 @Service
+@Deprecated
 public class RedisService {
     @Resource // todo ?
     private StringRedisTemplate stringRedisTemplate;

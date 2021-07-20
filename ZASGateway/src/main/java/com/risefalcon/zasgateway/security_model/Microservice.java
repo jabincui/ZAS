@@ -13,6 +13,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @Data
 public class Microservice {
+    public static final String ID = "id";
+    public static final String NAME = "name";
+
     private String id;
     private String name;
 

@@ -2,10 +2,12 @@ package com.risefalcon.zasgateway.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.risefalcon.zasgateway.security_model.Microservice;
 import com.risefalcon.zasgateway.security_model.URL;
+import com.risefalcon.zasgateway.service.*;
 import com.risefalcon.zasgateway.util.Constant;
 import com.risefalcon.zasgateway.security_model.Authority;
-import com.risefalcon.zasgateway.service.RedisService;
 import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,7 +20,13 @@ import java.util.List;
 public class AuthorityControllerImpl implements AuthorityController {
 
     @Autowired
-    private RedisService redisService;
+    private AuthorityServiceImpl authorityService;
+    @Autowired
+    private MicroserviceServiceImpl microserviceService;
+    @Autowired
+    private RoleServiceImpl roleService;
+    @Autowired
+    private URLServiceImpl urlService;
 
     @Override
     public JSONObject ins(Authority authority) {
@@ -33,13 +41,13 @@ public class AuthorityControllerImpl implements AuthorityController {
             return jsonObject;
         }
 
-        if ((!redisService.exist(Constant.MICROSERVICE, authority.getMsId()))
-                || (!redisService.exist(Constant.ROLE, authority.getRoleId()))
-                || (!redisService.exist(Constant.URL, authority.getUrlId()))) {
+        if ( (null == microserviceService.getById(authority.getMsId()))
+                || (null == roleService.getById(authority.getRoleId()))
+                || (null == urlService.getById(authority.getUrlId())) ) {
             jsonObject.put(Constant.RESULT_KEY, Constant.NOT_EXIST);
         }
 
-        for (Authority a: redisService.getValues(Constant.AUTHORITY, Authority.class)) {
+        for (Authority a: authorityService.list()) {
             if (a.getMsId().equals(authority.getMsId())
                     && a.getUrlId().equals(authority.getUrlId())
                     && a.getRoleId().equals(authority.getRoleId())) {
@@ -48,9 +56,9 @@ public class AuthorityControllerImpl implements AuthorityController {
             }
         }
 
-
-        Authority a = new Authority(authority.getMsId(), authority.getUrlId(), authority.getRoleId());
-        redisService.put(Constant.AUTHORITY, a.getId(), JSON.toJSONString(a));
+        Authority a = new Authority(authority.getMsId(),
+                authority.getUrlId(), authority.getRoleId());
+        authorityService.save(a);
         jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
         jsonObject.put(Constant.OBJ, a);
         return jsonObject;
@@ -66,16 +74,16 @@ public class AuthorityControllerImpl implements AuthorityController {
         if (id == null || id.equals("")) {
             return Constant.INVALID;
         }
-        if (!redisService.exist(Constant.AUTHORITY, id)) {
+        if (null == authorityService.getById(id)) {
             return Constant.NOT_EXIST;
         }
-        redisService.delete(Constant.AUTHORITY, id);
+        authorityService.removeById(id);
         return Constant.PASS;
     }
 
     @Override
     public List<Authority> getAll() {
-        return redisService.getValues(Constant.AUTHORITY, Authority.class);
+        return authorityService.list();
     }
 
 
@@ -85,12 +93,12 @@ public class AuthorityControllerImpl implements AuthorityController {
         if (msId == null || msId.equals("")) {
             jsonObject.put(Constant.RESULT_KEY, Constant.INVALID);
         }
-        if (!redisService.exist(Constant.MICROSERVICE, msId)) {
+        if (null == microserviceService.getById(msId)) {
             jsonObject.put(Constant.RESULT_KEY, Constant.NOT_EXIST);
             return jsonObject;
         }
-        List<Authority> auths = redisService.getValues(Constant.AUTHORITY, Authority.class);
-        auths.removeIf(auth -> !auth.getMsId().equals(msId));
+        List<Authority> auths = authorityService
+                .list(new QueryWrapper<Authority>().eq(Microservice.ID, msId));
         jsonObject.put(Constant.RESULT_KEY, Constant.PASS);
         jsonObject.put(Constant.OBJ, auths);
         return jsonObject;
